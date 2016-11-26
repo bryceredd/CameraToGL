@@ -15,7 +15,7 @@ static float average(float *nums, int length) {
   for (int i = 0; i < length; i++) {
     totalTime += nums[i];
   }
-  return totalTime;
+  return totalTime / (float)length;
 }
 
 @implementation BackgroundTask
