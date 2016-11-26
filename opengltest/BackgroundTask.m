@@ -8,9 +8,24 @@
 
 #import "BackgroundTask.h"
 
+static const int kSamplesPerAverage = 10;
+
+static float average(float *nums, int length) {
+  float totalTime = 0;
+  for (int i = 0; i < length; i++) {
+    totalTime += nums[i];
+  }
+  return totalTime;
+}
+
 @implementation BackgroundTask
 {
   dispatch_queue_t _queue;
+  int _count;
+  float _times[kSamplesPerAverage];
+
+  // Keep the garbage value around so the compiler doesn't optimize it out
+  float _num;
 }
 
 - (instancetype)init
@@ -24,31 +39,14 @@
 
 - (void)run:(void(^)(float))complete
 {
-  static const int samplesPerAverage = 10;
-  static int count;
-  static float num;
-  static float times[samplesPerAverage];
-  count++;
+  _count++;
   dispatch_async(_queue, ^{
-    @synchronized(self) {
-      if (_isProcessing) {
-        return;
-      }
-      _isProcessing = YES;
-    }
     NSDate *start = [NSDate date];
     for (int i = 1; i < 5000000; i++) {
-      num += sqrt(i);
+      _num += sqrt(i);
     }
-    @synchronized (self) {
-      _isProcessing = NO;
-    }
-    times[count % samplesPerAverage] = [start timeIntervalSinceNow];
-    float totalTime = 0;
-    for (int i = 0; i < samplesPerAverage; i++) {
-      totalTime += times[i];
-    }
-    complete(totalTime / (float)samplesPerAverage);
+    _times[_count % kSamplesPerAverage] = [start timeIntervalSinceNow];
+    complete(average(_times, kSamplesPerAverage));
   });
 }
 
